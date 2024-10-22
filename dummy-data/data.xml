@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<records>
+    <record>
+        <id>1</id>
+        <name>John Doe</name>
+        <age>30</age>
+        <city>New York</city>
+    </record>
+    <record>
+        <id>2</id>
+        <name>Jane Smith</name>
+        <age>25</age>
+        <city>Los Angeles</city>
+    </record>
+    <record>
+        <id>3</id>
+        <name>Michael Johnson</name>
+        <age>40</age>
+        <city>Chicago</city>
+    </record>
+</records>

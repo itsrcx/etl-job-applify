@@ -1,0 +1,7 @@
+unixodbc
+odbc-postgresql
+
+#### CMDS ####
+#!sudo dpkg -i mysql-odbc.deb
+#!/bin/bash odbcinst -q -d
+#!cat /etc/odbcinst.ini
