@@ -69,20 +69,19 @@ class XMLDataSource(DataSource):
 
 class JDBCDataSource(DataSource):
     """Establishes a JDBC connection to multiple data sources"""
-    def __init__(self, jdbc_url, user_name, password, driver, table_name=None):
+    def __init__(self, jdbc_url, user_name, password, driver):
         self.jdbc_url = jdbc_url
-        self.table_name = table_name
         self.user_name = user_name
         self.password = password
         self.driver = driver
 
-    def fetch_data(self, spark: SparkSession):
+    def fetch_data(self, spark: SparkSession, table_name):
         """Fetches all data for the provided table using spark."""
         try:
             df = spark.read \
                 .format("jdbc") \
                 .option("url", self.jdbc_url) \
-                .option("dbtable", self.table_name) \
+                .option("dbtable", table_name) \
                 .option("user", self.user_name) \
                 .option("password", self.password) \
                 .option("driver", self.driver) \
@@ -182,3 +181,114 @@ class ODBCDataSource(DataSource):
         else:
             print("No data fetched")
             return None
+
+# def main():
+
+#     mysql_jdbc_path = "./jdbc-drivers/mysql-connector-j-9.1.0.jar"
+#     postgres_jdbc_path = "./jdbc-drivers/postgresql-42.7.4.jar"
+#     mssql_jdbc_path = "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar"
+#     oracle_jdbc_path = "./jdbc-drivers/oracle-jdbc8.jar"
+
+
+#     spark = SparkSession.builder.appName("ETLJob").config("spark.jars", mssql_jdbc_path).getOrCreate()
+
+#     # mysql
+#     mysql_url = "jdbc:mysql://localhost:3306/test_db"
+#     mysql_driver = "com.mysql.cj.jdbc.Driver"
+#     user = "test_user"
+#     password = "test_password"
+#     table_name = "users"
+
+#     ## postgres
+#     postgres_url = "jdbc:postgresql://localhost:5432/test_db"
+#     postgres_driver = "org.postgresql.Driver"
+#     user = "test_user"
+#     password = "test_password"
+#     table_name = "users"
+
+#     ## ms-sql
+#     mssql_driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+#     user = "sa"
+#     password = "Passw0rd"
+#     table_name = "users"
+#     mssql_url = f"jdbc:sqlserver://localhost:1433;databaseName=demo;encrypt=true;trustServerCertificate=true"
+
+#     # oracle
+#     # oracle_url = "jdbc:oracle:thin:@localhost:1521/FREEPDB1"
+#     # oracle_driver = "oracle.jdbc.driver.OracleDriver"
+#     # user = "test_user"
+#     # password = "test_password"
+#     # table_name = "users"
+
+#     df = spark.read \
+#                 .format("jdbc") \
+#                 .option("url", mssql_url) \
+#                 .option("dbtable", table_name) \
+#                 .option("user", user) \
+#                 .option("password", password) \
+#                 .option("driver", mssql_driver) \
+#                 .load()
+#     # data_source = JDBCDataSource(
+#     #     jdbc_url=oracle_url,
+#     #     table_name=table_name,
+#     #     user_name=user,
+#     #     password=password,
+#     #     driver=oracle_driver
+#     # )
+
+#     # df = data_source.fetch_data(spark)
+#     # df.printSchema()
+#     df.show()
+
+
+#     spark.stop()
+
+# if __name__ == "__main__":
+#     main()
+
+# db_creds = {
+#             "host": "onefitness-dev.cucwth4ve3e9.ap-southeast-1.rds.amazonaws.com",
+#             "port": 3306,
+#             "database": "onefitness_dev",
+#             "username": "developer",
+#             "password": "IKPo4iLMv0eJddEm",
+#         }
+# def main():
+
+#     server = db_creds["host"]
+#     user = db_creds["username"]
+#     password = db_creds["password"]
+#     table_name = ""
+#     database=db_creds["database"]
+
+#     spark = SparkSession.builder \
+#     .appName("ODBC Data Fetch Example") \
+#     .getOrCreate()
+
+#     mysql_config = MySQLConfig(
+#         server=server,
+#         user=user,
+#         password=password,
+#         database=database
+#     )
+
+#     postgres_config = PostgreSQLConfig(
+#         server=server,
+#         user=user,
+#         password=password,
+#         database=database
+#     )
+
+#     connector = DatabaseConnector(config=mysql_config)
+
+#     query = f"SHOW tables;"
+
+#     odbc_data_source = ODBCDataSource(query=query, connector=connector)
+
+#     df = odbc_data_source.fetch_data(spark)
+
+#     df.show()
+
+
+# if __name__ == "__main__":
+#     main()

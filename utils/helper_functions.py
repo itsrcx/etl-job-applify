@@ -79,13 +79,10 @@ def fetch_model_mapping(table_name, connection_id):
     table = dynamodb.Table(table_name)
 
     response = table.scan(
-        FilterExpression=Attr('your_attribute_name').eq('YourValue')
-        )
-
-    if "Item" in response:
-        model_mappings = response["Item"]
-
+        FilterExpression=Attr('connectorId').eq(connection_id)
+    )
+    if "Items" in response and response["Items"]:
+        model_mappings = response["Items"]
         return model_mappings
-
     else:
-        raise Exception(f"No data found for Id: {connection_id}")
+        raise Exception(f"No data found for connectorId: {connection_id}")
