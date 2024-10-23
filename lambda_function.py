@@ -20,7 +20,7 @@ from services.data_source import DATASOURCE_MAP
 
 from utils.helper_functions import fetch_connection_params, get_db_creds, fetch_model_mapping
 
-from data_source import DATASTORE_MAP
+from services.data_store import DATASTORE_MAP ,RedshiftDataStore
 
 load_dotenv()
 
@@ -51,8 +51,8 @@ DATABASE_CONFIG = {
         "jar_path": "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar,./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     },
     DATASTORE_MAP["REDSHIFT"]: {
-        "db_url": "jdbc:redshift://{REDSHIFT_CLUSTER}:{db_port}/{db_name}"
-        "driver": "com.amazon.redshift.jdbc42.Driver"
+        "db_url": "jdbc:redshift://{REDSHIFT_CLUSTER}:{db_port}/{db_name}",
+        "driver": "com.amazon.redshift.jdbc42.Driver",
         "jar_path": "./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     }
 }
@@ -93,7 +93,6 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
     etl_logger = ETLLogger(log_file="etl_job.log")
     local_logs = etl_logger.get_logger()
 
-    redshift_jar_path= "./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     connection_params = fetch_connection_params(
         table_name=CONNECTOR_DYNAMO_TABLE,
         connection_id=connection_id
@@ -114,17 +113,17 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
 
     if source_type == DATASOURCE_MAP["FILE"]["JSON"]: 
         data_source = JSONDataSource(connection_params["file_path"]) # s3 file path
-        spark = get_spark_session(jars=redshift_jar_path)
+        spark = get_spark_session(jars=DATASTORE_MAP['REDSHIFT']['jar_path'])
 
     elif source_type == DATASOURCE_MAP["FILE"]["CSV"]:
         data_source = CSVDataSource(connection_params["file_path"]) # s3 file path
-        spark = get_spark_session(jars=redshift_jar_path)
+        spark = get_spark_session(jars=DATASTORE_MAP['REDSHIFT']['jar_path'])
 
     elif source_type == DATASOURCE_MAP["FILE"]["XML"]:
         data_source = XMLDataSource(
             connection_params["file_path"], connection_params["row_tag"] # s3 file path with row tag meta data
         )
-        spark = get_spark_session(packages="com.databricks:spark-xml_2.12:0.14.0",jars=redshift_jar_path)
+        spark = get_spark_session(packages="com.databricks:spark-xml_2.12:0.14.0",jars=DATASTORE_MAP['REDSHIFT']['jar_path'])
 
     elif source_type in DATASOURCE_MAP["DB"].values():
 
@@ -160,6 +159,14 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
             driver=driver
         )
 
+        data_store = RedshiftDataStore(
+            spark,
+            f"jdbc:redshift://test1.328957034549.us-east-1.redshift-serverless.amazonaws.com:5439/dev",
+            "admin",
+            "Applify3038",
+            "com.amazon.redshift.jdbc42.Driver"
+        )
+
         if data_source.check_connection(spark):
             # cw_logger.log(f"No db creds found for conn id: {connection_id}, source: {source_type} database successful.")
             local_logs.info(f"Connection to conn id: {connection_id}, {source_type} database successful.")
@@ -167,133 +174,55 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
 
             if tables_df:
                 table_names = tables_df.select("table_name").rdd.flatMap(lambda x: x).collect()
+                # cw_logger.log(f"Tables fetched from the database: {table_names}")
                 local_logs.info(f"Tables fetched from the database: {table_names}")
             else:
+                # cw_logger.log("No tables found in the database.")
                 local_logs.warning("No tables found in the database.")
         else:
+            # cw_logger.log(f"Failed to connect to the {source_type} database.")
             local_logs.error(f"Failed to connect to the {source_type} database.")
-        
+            return
+
+        if data_store.check_connection():
+            local_logs.info("Redshift connection successful")
+        else :
+            local_logs.error("Redshift connection unsuccessful")
+            return 
+        #################>>>>>>>>>>>>>>>>>>>>>>>> IN PROGRESS >>>>>>>>>>>>>>>>>>>>>>>>
         # model_mapping = fetch_model_mapping(
         #     table_name=MODEL_MAPPING_DYNAMO_TABLE, 
-        #     connection_id="avtar_1726485754460-1728890772659"
+        #     connection_id="avtar_1726485754460-1728890772659" # must be the connection id from event
         # )
-
-        # print(model_mapping)
         
+        # if not model_mapping:
+        #     local_logs.error(f"No model mappings for the Connector Id: {connection_id}")
+        # local_logs.warning(f"Model mapping fetched for Connector Id: {connection_id}")
+        
+        if table_names:
+            print(table_names)
+            while True:
+                table = input(f"Choose table name to insert from Connector Id: {connection_id}: ")
 
+                if table in table_names:
+                    df = data_source.fetch_data(spark, table)
+                    if df:
+                        if data_store.upsert_data(df,table):
+                            local_logs.info(f"Data Inserted in Redshift table: {table}")
+                        else:
+                            local_logs.error(f"Data not Inserted: {table} ")
+                            return
+                    break 
+
+                else:
+                    print(f"Invalid table name: {table}. Please try again.")
+        ##################>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    if not spark:
+        local_logs.error(f"No spark session created for Connector Id: {connection_id}")
+        return
+    
     spark.stop()
 
 if __name__ == "__main__":
     lambda_handler()
-
-
-# def main():
-
-#     mysql_jdbc_path = "./jdbc-drivers/mysql-connector-j-9.1.0.jar"
-#     postgres_jdbc_path = "./jdbc-drivers/postgresql-42.7.4.jar"
-#     mssql_jdbc_path = "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar"
-#     oracle_jdbc_path = "./jdbc-drivers/oracle-jdbc8.jar"
-
-
-#     spark = SparkSession.builder.appName("ETLJob").config("spark.jars", mssql_jdbc_path).getOrCreate()
-
-#     # mysql
-#     mysql_url = "jdbc:mysql://localhost:3306/test_db"
-#     mysql_driver = "com.mysql.cj.jdbc.Driver"
-#     user = "test_user"
-#     password = "test_password"
-#     table_name = "users"
-
-#     ## postgres
-#     postgres_url = "jdbc:postgresql://localhost:5432/test_db"
-#     postgres_driver = "org.postgresql.Driver"
-#     user = "test_user"
-#     password = "test_password"
-#     table_name = "users"
-
-#     ## ms-sql
-#     mssql_driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-#     user = "sa"
-#     password = "Passw0rd"
-#     table_name = "users"
-#     mssql_url = f"jdbc:sqlserver://localhost:1433;databaseName=demo;encrypt=true;trustServerCertificate=true"
-
-#     # oracle
-#     # oracle_url = "jdbc:oracle:thin:@localhost:1521/FREEPDB1"
-#     # oracle_driver = "oracle.jdbc.driver.OracleDriver"
-#     # user = "test_user"
-#     # password = "test_password"
-#     # table_name = "users"
-
-#     df = spark.read \
-#                 .format("jdbc") \
-#                 .option("url", mssql_url) \
-#                 .option("dbtable", table_name) \
-#                 .option("user", user) \
-#                 .option("password", password) \
-#                 .option("driver", mssql_driver) \
-#                 .load()
-#     # data_source = JDBCDataSource(
-#     #     jdbc_url=oracle_url,
-#     #     table_name=table_name,
-#     #     user_name=user,
-#     #     password=password,
-#     #     driver=oracle_driver
-#     # )
-
-#     # df = data_source.fetch_data(spark)
-#     # df.printSchema()
-#     df.show()
-
-
-#     spark.stop()
-
-# if __name__ == "__main__":
-#     main()
-
-# db_creds = {
-#             "host": "onefitness-dev.cucwth4ve3e9.ap-southeast-1.rds.amazonaws.com",
-#             "port": 3306,
-#             "database": "onefitness_dev",
-#             "username": "developer",
-#             "password": "IKPo4iLMv0eJddEm",
-#         }
-# def main():
-
-#     server = db_creds["host"]
-#     user = db_creds["username"]
-#     password = db_creds["password"]
-#     table_name = ""
-#     database=db_creds["database"]
-
-#     spark = SparkSession.builder \
-#     .appName("ODBC Data Fetch Example") \
-#     .getOrCreate()
-
-#     mysql_config = MySQLConfig(
-#         server=server,
-#         user=user,
-#         password=password,
-#         database=database
-#     )
-
-#     postgres_config = PostgreSQLConfig(
-#         server=server,
-#         user=user,
-#         password=password,
-#         database=database
-#     )
-
-#     connector = DatabaseConnector(config=mysql_config)
-
-#     query = f"SHOW tables;"
-
-#     odbc_data_source = ODBCDataSource(query=query, connector=connector)
-
-#     df = odbc_data_source.fetch_data(spark)
-
-#     df.show()
-
-
-# if __name__ == "__main__":
-#     main()

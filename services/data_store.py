@@ -52,6 +52,26 @@ class RedshiftDataStore(DataStore):
         self.db_password = db_password
         self.db_driver = db_driver
 
+    def check_connection(self):
+        """Checks the connection to the database by executing a simple query."""
+        try:
+            # Attempting to run a simple query to check the connection
+            self.spark.read \
+                .format("jdbc") \
+                .option("url", self.db_url) \
+                .option("query", "SELECT 1 AS test_column") \
+                .option("user", self.db_user) \
+                .option("password", self.db_password) \
+                .option("driver", self.db_driver) \
+                .load()
+            return True
+        except AnalysisException as e:
+            print(f"AnalysisException: {e}")
+            return False
+        except Exception as e:
+            print(f"Failed to connect to the database: {e}")
+            return False
+
     #Write data to redshift
     def upsert_data(self, df: DataFrame, table_name: str):
         df.write \
@@ -63,7 +83,6 @@ class RedshiftDataStore(DataStore):
             .option("driver", self.db_driver) \
             .mode("append") \
             .save()
-        print("data loaded to the redshift")
 
 class DataLakeDataStore(DataStore):
     def upsert_data(self, data):

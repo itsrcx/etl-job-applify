@@ -24,3 +24,29 @@
 2024-10-23 15:40:50,956 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
 2024-10-23 15:47:28,123 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
 2024-10-23 15:47:40,167 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 16:06:35,831 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 16:06:41,507 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 16:08:57,611 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 16:09:03,563 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 16:10:18,588 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 16:10:24,325 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 16:13:13,784 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 16:13:19,592 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 16:13:20,809 - WARNING - Connection Id: bharwer_1727339262065-1729659952682,
+2024-10-23 16:37:59,403 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 16:38:05,270 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 16:39:03,191 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 16:39:08,829 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 17:28:25,305 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 17:28:38,751 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 17:28:42,892 - INFO - Redshift connection successful
+2024-10-23 17:33:33,160 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 17:33:44,062 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 17:33:48,467 - INFO - Redshift connection successful
+2024-10-23 17:36:47,580 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 17:36:58,409 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 17:37:02,100 - INFO - Redshift connection successful
+2024-10-23 17:38:29,559 - ERROR - Data not Inserted: Supplier 
+2024-10-23 17:39:41,377 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-23 17:39:56,411 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-23 17:40:01,164 - INFO - Redshift connection successful
