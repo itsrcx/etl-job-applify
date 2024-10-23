@@ -121,51 +121,51 @@ class JDBCDataSource(DataSource):
         except Exception as e:
             print(f"Error while showing tables: {e}")
 
-# class DatabaseConnector:
-#     """Handles database connection using dependency injection."""
-#     def __init__(self, config: DBConfig):
-#         self.config = config
+class DatabaseConnector:
+    """Handles database connection using dependency injection."""
+    def __init__(self, config: DBConfig):
+        self.config = config
 
-#     def connect(self):
-#         """Establishes an ODBC connection using pyodbc."""
-#         try:
-#             conn_str = self.config.get_connection_string()
-#             conn = pyodbc.connect(conn_str)
-#             print("ODBC Connection successful")
-#             return conn
-#         except pyodbc.Error as e:
-#             print("Error in connection: ", e)
-#             return None
+    def connect(self):
+        """Establishes an ODBC connection using pyodbc."""
+        try:
+            conn_str = self.config.get_connection_string()
+            conn = pyodbc.connect(conn_str)
+            print("ODBC Connection successful")
+            return conn
+        except pyodbc.Error as e:
+            print("Error in connection: ", e)
+            return None
     
-#     def fetch_data(self, query: str):
-#         """Fetches data using ODBC and returns the raw result."""
-#         conn = self.connect()
-#         if conn:
-#             cursor = conn.cursor()
-#             cursor.execute(query)
-#             rows = cursor.fetchall()
-#             columns = [column[0] for column in cursor.description]
-#             conn.close()
-#             return columns, rows
-#         return None, None
+    def fetch_data(self, query: str):
+        """Fetches data using ODBC and returns the raw result."""
+        conn = self.connect()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            columns = [column[0] for column in cursor.description]
+            conn.close()
+            return columns, rows
+        return None, None
 
-# class ODBCDataSource(DataSource):
-#     """DataSource for loading data from a database via ODBC without pandas."""
-#     def __init__(self, query: str, connector: DatabaseConnector):
-#         self.query = query
-#         self.connector = connector
+class ODBCDataSource(DataSource):
+    """DataSource for loading data from a database via ODBC without pandas."""
+    def __init__(self, query: str, connector: DatabaseConnector):
+        self.query = query
+        self.connector = connector
 
-#     def fetch_data(self, spark: SparkSession):
-#         """Fetches data from ODBC and converts it directly to a Spark DataFrame."""
-#         columns, rows = self.connector.fetch_data(self.query)
+    def fetch_data(self, spark: SparkSession):
+        """Fetches data from ODBC and converts it directly to a Spark DataFrame."""
+        columns, rows = self.connector.fetch_data(self.query)
         
-#         if columns and rows:
-#             # Convert rows to a list of Spark Rows
-#             spark_rows = [Row(**dict(zip(columns, row))) for row in rows]
+        if columns and rows:
+            # Convert rows to a list of Spark Rows
+            spark_rows = [Row(**dict(zip(columns, row))) for row in rows]
             
-#             # Create a Spark DataFrame from the Spark Rows
-#             spark_df = spark.createDataFrame(spark_rows)
-#             return spark_df
-#         else:
-#             print("No data fetched")
-#             return None
+            # Create a Spark DataFrame from the Spark Rows
+            spark_df = spark.createDataFrame(spark_rows)
+            return spark_df
+        else:
+            print("No data fetched")
+            return None

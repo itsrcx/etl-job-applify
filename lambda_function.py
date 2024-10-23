@@ -9,9 +9,12 @@ from services.data_source import (
     CSVDataSource,
     XMLDataSource,
     JDBCDataSource,
-    # ODBCDataSource,
-    # DatabaseConnector
+    ODBCDataSource,
+    DatabaseConnector
 )
+
+from services.odbc_db_config import PostgreSQLConfig, MySQLConfig
+
 from services.logger import ETLLogger, CloudWatchLogger
 
 from utils.helper_functions import fetch_connection_params
@@ -39,7 +42,7 @@ DATABASE_CONFIG = {
     DATASOURCE_MAP["DB"]["MYSQL"]: {
         "jdbc_url": "jdbc:mysql://{host}:{port}/{database}",
         "driver": "com.mysql.cj.jdbc.Driver",
-        "jar_path": "./jdbc-drivers/mysql-connector-j-9.1.0.jar"
+        "jar_path": "./jdbc-drivers/mysql-connector-java-8.0.28.jar"
     },
     DATASOURCE_MAP["DB"]["POSTGRES"]: {
         "jdbc_url": "jdbc:postgresql://{host}:{port}/{database}",
@@ -89,8 +92,8 @@ def get_spark_session(app_name="ETLJob", config_options=None, jars=None, package
 
 
 # JDBC connections
-def main(connection_id="avtar_1726485754460-1729164783910"):
-
+def main():
+    connection_id="avtar_1726485754460-1729164783910"
     # cw_logger = CloudWatchLogger(LOG_GROUP)
     etl_logger = ETLLogger(log_file="etl_job.log")
     local_logs = etl_logger.get_logger()
@@ -109,11 +112,11 @@ def main(connection_id="avtar_1726485754460-1729164783910"):
         "source": "mysql",
         "userName": "avtar_1726485754460",
         "db_creds": {
-            "host": "onefitness-dev.cucwth4ve3e9.ap-southeast-1.rds.amazonaws.com",
+            "host": "spark.cv2seq0q49tf.ap-south-1.rds.amazonaws.com",
             "port": 3306,
-            "database": "onefitness_dev",
-            "username": "developer",
-            "password": "IKPo4iLMv0eJddEm",
+            "database": "spark",
+            "username": "admin",
+            "password": "rcx1234#",
         },
         # for other data source we need {file_path}, {row_tag} parameters in the data according to source types
     }
@@ -266,13 +269,20 @@ if __name__ == "__main__":
 # if __name__ == "__main__":
 #     main()
 
+# db_creds = {
+#             "host": "onefitness-dev.cucwth4ve3e9.ap-southeast-1.rds.amazonaws.com",
+#             "port": 3306,
+#             "database": "onefitness_dev",
+#             "username": "developer",
+#             "password": "IKPo4iLMv0eJddEm",
+#         }
 # def main():
 
-#     server="localhost"
-#     user = "test_user"
-#     password = "test_password"
-#     table_name = "users"
-#     database="test_db"
+#     server = db_creds["host"]
+#     user = db_creds["username"]
+#     password = db_creds["password"]
+#     table_name = ""
+#     database=db_creds["database"]
 
 #     spark = SparkSession.builder \
 #     .appName("ODBC Data Fetch Example") \
@@ -292,12 +302,16 @@ if __name__ == "__main__":
 #         database=database
 #     )
 
-#     connector = DatabaseConnector(config=postgres_config)
+#     connector = DatabaseConnector(config=mysql_config)
 
-#     query = f"SELECT * FROM {table_name}"
+#     query = f"SHOW tables;"
 
 #     odbc_data_source = ODBCDataSource(query=query, connector=connector)
 
 #     df = odbc_data_source.fetch_data(spark)
 
 #     df.show()
+
+
+# if __name__ == "__main__":
+#     main()
