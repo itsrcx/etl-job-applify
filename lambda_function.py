@@ -160,133 +160,47 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
 
             if tables_df:
                 table_names = tables_df.select("table_name").rdd.flatMap(lambda x: x).collect()
+                # cw_logger.log(f"Tables fetched from the database: {table_names}")
                 local_logs.info(f"Tables fetched from the database: {table_names}")
             else:
+                # cw_logger.log("No tables found in the database.")
                 local_logs.warning("No tables found in the database.")
         else:
+            # cw_logger.log(f"Failed to connect to the {source_type} database.")
             local_logs.error(f"Failed to connect to the {source_type} database.")
-        
+            return
+
+        #################>>>>>>>>>>>>>>>>>>>>>>>> IN PROGRESS >>>>>>>>>>>>>>>>>>>>>>>>
         # model_mapping = fetch_model_mapping(
         #     table_name=MODEL_MAPPING_DYNAMO_TABLE, 
-        #     connection_id="avtar_1726485754460-1728890772659"
+        #     connection_id="avtar_1726485754460-1728890772659" # must be the connection id from event
         # )
-
-        # print(model_mapping)
         
+        # if not model_mapping:
+        #     local_logs.error(f"No model mappings for the Connector Id: {connection_id}")
+        # local_logs.warning(f"Model mapping fetched for Connector Id: {connection_id}")
+        
+        if table_names:
+            print(table_names)
+            while True:
+                table = input(f"Choose table name to insert from Connector Id: {connection_id}: ")
 
+                if table in table_names:
+                    df = data_source.fetch_data(spark, table)
+                    if df:
+                        ## >>>>> Ajits logic here <<<<<<< Please! remove comment for PR.
+                        df.show()
+                    break 
+
+                else:
+                    print(f"Invalid table name: {table}. Please try again.")
+        ##################>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    if not spark:
+        local_logs.error(f"No spark session created for Connector Id: {connection_id}")
+        return
+    
     spark.stop()
 
 if __name__ == "__main__":
     lambda_handler()
-
-
-# def main():
-
-#     mysql_jdbc_path = "./jdbc-drivers/mysql-connector-j-9.1.0.jar"
-#     postgres_jdbc_path = "./jdbc-drivers/postgresql-42.7.4.jar"
-#     mssql_jdbc_path = "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar"
-#     oracle_jdbc_path = "./jdbc-drivers/oracle-jdbc8.jar"
-
-
-#     spark = SparkSession.builder.appName("ETLJob").config("spark.jars", mssql_jdbc_path).getOrCreate()
-
-#     # mysql
-#     mysql_url = "jdbc:mysql://localhost:3306/test_db"
-#     mysql_driver = "com.mysql.cj.jdbc.Driver"
-#     user = "test_user"
-#     password = "test_password"
-#     table_name = "users"
-
-#     ## postgres
-#     postgres_url = "jdbc:postgresql://localhost:5432/test_db"
-#     postgres_driver = "org.postgresql.Driver"
-#     user = "test_user"
-#     password = "test_password"
-#     table_name = "users"
-
-#     ## ms-sql
-#     mssql_driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
-#     user = "sa"
-#     password = "Passw0rd"
-#     table_name = "users"
-#     mssql_url = f"jdbc:sqlserver://localhost:1433;databaseName=demo;encrypt=true;trustServerCertificate=true"
-
-#     # oracle
-#     # oracle_url = "jdbc:oracle:thin:@localhost:1521/FREEPDB1"
-#     # oracle_driver = "oracle.jdbc.driver.OracleDriver"
-#     # user = "test_user"
-#     # password = "test_password"
-#     # table_name = "users"
-
-#     df = spark.read \
-#                 .format("jdbc") \
-#                 .option("url", mssql_url) \
-#                 .option("dbtable", table_name) \
-#                 .option("user", user) \
-#                 .option("password", password) \
-#                 .option("driver", mssql_driver) \
-#                 .load()
-#     # data_source = JDBCDataSource(
-#     #     jdbc_url=oracle_url,
-#     #     table_name=table_name,
-#     #     user_name=user,
-#     #     password=password,
-#     #     driver=oracle_driver
-#     # )
-
-#     # df = data_source.fetch_data(spark)
-#     # df.printSchema()
-#     df.show()
-
-
-#     spark.stop()
-
-# if __name__ == "__main__":
-#     main()
-
-# db_creds = {
-#             "host": "onefitness-dev.cucwth4ve3e9.ap-southeast-1.rds.amazonaws.com",
-#             "port": 3306,
-#             "database": "onefitness_dev",
-#             "username": "developer",
-#             "password": "IKPo4iLMv0eJddEm",
-#         }
-# def main():
-
-#     server = db_creds["host"]
-#     user = db_creds["username"]
-#     password = db_creds["password"]
-#     table_name = ""
-#     database=db_creds["database"]
-
-#     spark = SparkSession.builder \
-#     .appName("ODBC Data Fetch Example") \
-#     .getOrCreate()
-
-#     mysql_config = MySQLConfig(
-#         server=server,
-#         user=user,
-#         password=password,
-#         database=database
-#     )
-
-#     postgres_config = PostgreSQLConfig(
-#         server=server,
-#         user=user,
-#         password=password,
-#         database=database
-#     )
-
-#     connector = DatabaseConnector(config=mysql_config)
-
-#     query = f"SHOW tables;"
-
-#     odbc_data_source = ODBCDataSource(query=query, connector=connector)
-
-#     df = odbc_data_source.fetch_data(spark)
-
-#     df.show()
-
-
-# if __name__ == "__main__":
-#     main()
