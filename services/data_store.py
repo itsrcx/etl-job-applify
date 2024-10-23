@@ -1,5 +1,9 @@
 from pyspark.sql import DataFrame
 
+DATASTORE_MAP = {
+    "REDSHIFT": "redshift"
+}
+
 class DataStore:
     def upsert_data(self, data):
         raise NotImplementedError()
@@ -41,9 +45,25 @@ class PostgresDataStore(DataStore):
         print(f"Executing upsert for PostgreSQL:\n{upsert_sql}")
 
 class RedshiftDataStore(DataStore):
-    def upsert_data(self, data):
-        # Code to upsert data into Redshift
-        pass
+    def __init__(self, spark, db_url, db_user, db_password, db_driver):
+        self.spark = spark
+        self.db_url = db_url
+        self.db_user = db_user
+        self.db_password = db_password
+        self.db_driver = db_driver
+
+    #Write data to redshift
+    def upsert_data(self, df: DataFrame, table_name: str):
+        df.write \
+            .format("jdbc") \
+            .option("url", self.db_url) \
+            .option("dbtable", table_name) \
+            .option("user", self.db_user) \
+            .option("password", self.db_password) \
+            .option("driver", self.db_driver) \
+            .mode("append") \
+            .save()
+        print("data loaded to the redshift")
 
 class DataLakeDataStore(DataStore):
     def upsert_data(self, data):

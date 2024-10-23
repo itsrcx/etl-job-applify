@@ -20,6 +20,8 @@ from services.data_source import DATASOURCE_MAP
 
 from utils.helper_functions import fetch_connection_params, get_db_creds, fetch_model_mapping
 
+from data_source import DATASTORE_MAP
+
 load_dotenv()
 
 CONNECTOR_DYNAMO_TABLE = os.getenv("CONNECTOR_DYNAMO_TABLE")
@@ -31,22 +33,27 @@ DATABASE_CONFIG = {
     DATASOURCE_MAP["DB"]["MYSQL"]: {
         "jdbc_url": "jdbc:mysql://{host}:{port}/{database}",
         "driver": "com.mysql.cj.jdbc.Driver",
-        "jar_path": "./jdbc-drivers/mysql-connector-java-8.0.28.jar"
+        "jar_path": "./jdbc-drivers/mysql-connector-java-8.0.28.jar,./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     },
     DATASOURCE_MAP["DB"]["POSTGRES"]: {
         "jdbc_url": "jdbc:postgresql://{host}:{port}/{database}",
         "driver": "org.postgresql.Driver",
-        "jar_path": "./jdbc-drivers/postgresql-42.7.4.jar"
+        "jar_path": "./jdbc-drivers/postgresql-42.7.4.jar,./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     },
     DATASOURCE_MAP["DB"]["ORACLE"]: {
         "jdbc_url": "jdbc:oracle:thin:@{host}:{port}:{database}",
         "driver": "oracle.jdbc.driver.OracleDriver",
-        "jar_path": "./jdbc-drivers/oracle-jdbc8.jar"
+        "jar_path": "./jdbc-drivers/oracle-jdbc8.jar,./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     },
     DATASOURCE_MAP["DB"]["MSSQL"]: {
         "jdbc_url": "jdbc:sqlserver://{host}:{port};databaseName={database};encrypt=true;trustServerCertificate=true",
         "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-        "jar_path": "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar"
+        "jar_path": "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar,./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
+    },
+    DATASTORE_MAP["REDSHIFT"]: {
+        "db_url": "jdbc:redshift://{REDSHIFT_CLUSTER}:{db_port}/{db_name}"
+        "driver": "com.amazon.redshift.jdbc42.Driver"
+        "jar_path": "./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     }
 }
 
@@ -86,7 +93,7 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
     etl_logger = ETLLogger(log_file="etl_job.log")
     local_logs = etl_logger.get_logger()
 
-    
+    redshift_jar_path= "./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     connection_params = fetch_connection_params(
         table_name=CONNECTOR_DYNAMO_TABLE,
         connection_id=connection_id
@@ -107,17 +114,17 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
 
     if source_type == DATASOURCE_MAP["FILE"]["JSON"]: 
         data_source = JSONDataSource(connection_params["file_path"]) # s3 file path
-        spark = get_spark_session()
+        spark = get_spark_session(jars=redshift_jar_path)
 
     elif source_type == DATASOURCE_MAP["FILE"]["CSV"]:
         data_source = CSVDataSource(connection_params["file_path"]) # s3 file path
-        spark = get_spark_session()
+        spark = get_spark_session(jars=redshift_jar_path)
 
     elif source_type == DATASOURCE_MAP["FILE"]["XML"]:
         data_source = XMLDataSource(
             connection_params["file_path"], connection_params["row_tag"] # s3 file path with row tag meta data
         )
-        spark = get_spark_session(packages="com.databricks:spark-xml_2.12:0.14.0")
+        spark = get_spark_session(packages="com.databricks:spark-xml_2.12:0.14.0",jars=redshift_jar_path)
 
     elif source_type in DATASOURCE_MAP["DB"].values():
 
