@@ -1,4 +1,6 @@
-.venv
-*__pycache__/*
 .env
+.venv
+*__pycache__*
 extras
+docker
+dummy-data

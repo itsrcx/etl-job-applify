@@ -6,6 +6,19 @@ from pyspark.sql.utils import AnalysisException
 from pyspark.errors import AnalysisException
 
 
+DATASOURCE_MAP = {
+    "DB": {
+        "MYSQL": "mysql",
+        "POSTGRES": "postgres",
+        "ORACLE": "oracle",
+        "MSSQL": "mssql",
+    },
+    "FILE": {
+        "JSON": "json", 
+        "CSV": "csv", 
+        "XML": "xml"
+    },
+}
 
 class DataSource:
     def fetch_data(self):
@@ -100,13 +113,13 @@ class JDBCDataSource(DataSource):
 
     def show_tables(self, spark: SparkSession, db_type: str):
         """Fetches the list of tables from the database."""
-        if db_type == "1":  # MySQL
+        if db_type == DATASOURCE_MAP["DB"]["MYSQL"]:
             table_query = f"(SELECT table_name FROM information_schema.tables WHERE table_schema = '{self.jdbc_url.split('/')[-1]}') AS tables"
-        elif db_type == "2":  # PostgreSQL
+        elif db_type == DATASOURCE_MAP["DB"]["POSTGRES"]:
             table_query = "(SELECT table_name FROM information_schema.tables WHERE table_schema = 'public') AS tables"
-        elif db_type == "3":  # Oracle
+        elif db_type == DATASOURCE_MAP["DB"]["ORACLE"]:
             table_query = "(SELECT table_name FROM user_tables) tables"
-        elif db_type == "4":  # MSSQL
+        elif db_type == DATASOURCE_MAP["DB"]["MSSQL"]:
             table_query =  "(SELECT table_name FROM INFORMATION_SCHEMA.TABLES) AS tables"
         try: 
             tables_df = spark.read \

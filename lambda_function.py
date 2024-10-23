@@ -4,6 +4,8 @@ import json
 import boto3
 import os
 
+from dotenv import load_dotenv
+
 from services.data_source import (
     JSONDataSource,
     CSVDataSource,
@@ -12,31 +14,18 @@ from services.data_source import (
     ODBCDataSource,
     DatabaseConnector
 )
-
 from services.odbc_db_config import PostgreSQLConfig, MySQLConfig
-
 from services.logger import ETLLogger, CloudWatchLogger
+from services.data_source import DATASOURCE_MAP
 
-from utils.helper_functions import fetch_connection_params
+from utils.helper_functions import fetch_connection_params, get_db_creds, fetch_model_mapping
 
+load_dotenv()
 
-DYNAMO_TABLE_NAME = os.environ.get("DYNAMO_TABLE_NAME")
+CONNECTOR_DYNAMO_TABLE = os.getenv("CONNECTOR_DYNAMO_TABLE")
+MODEL_MAPPING_DYNAMO_TABLE  = os.getenv("MODEL_MAPPING_DYNAMO_TABLE")
 
-LOG_GROUP = os.environ.get("LOG_GROUP")
-
-DATASOURCE_MAP = {
-    "DB": {
-        "MYSQL": "mysql",
-        "POSTGRES": "postgres",
-        "ORACLE": "oracle",
-        "MSSQL": "mssql",
-    },
-    "FILE": {
-        "JSON": "json", 
-        "CSV": "csv", 
-        "XML": "xml"
-    },
-}
+LOG_GROUP = os.getenv("LOG_GROUP")
 
 DATABASE_CONFIG = {
     DATASOURCE_MAP["DB"]["MYSQL"]: {
@@ -92,41 +81,23 @@ def get_spark_session(app_name="ETLJob", config_options=None, jars=None, package
 
 
 # JDBC connections
-def main():
-    connection_id="avtar_1726485754460-1729164783910"
+def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
     # cw_logger = CloudWatchLogger(LOG_GROUP)
     etl_logger = ETLLogger(log_file="etl_job.log")
     local_logs = etl_logger.get_logger()
 
-    # db_connector_data = fetch_connection_params(
-    #     table_name=DYNAMO_TABLE_NAME,
-    #     connection_id=connection_id
-    # )
+    
+    connection_params = fetch_connection_params(
+        table_name=CONNECTOR_DYNAMO_TABLE,
+        connection_id=connection_id
+    )
+    
+    if not connection_params:
+        # cw_logger.log(f"Connection parameters not found ind db for id: {connection_id}")
+        local_logs.error(f"Connection parameters not found ind db for id: {connection_id}")
+    
+    source_type = connection_params["source"]
 
-    db_connector_data = {
-        "id": "avtar_1726485754460-1729164783910",
-        "connectionName": "MYSQL",
-        "connectionStatus": "Active",
-        "lastModified": "2024-10-17T11:33:03.910Z",
-        "owner": "Avtar",
-        "source": "mysql",
-        "userName": "avtar_1726485754460",
-        "db_creds": {
-            "host": "spark.cv2seq0q49tf.ap-south-1.rds.amazonaws.com",
-            "port": 3306,
-            "database": "spark",
-            "username": "admin",
-            "password": "rcx1234#",
-        },
-        # for other data source we need {file_path}, {row_tag} parameters in the data according to source types
-    }
-
-    if not db_connector_data:
-        # cw_logger.log(f"No data found for id: {connection_id}")
-        local_logs.error(f"No data found for id: {connection_id}")
-        return
-
-    source_type = db_connector_data["source"]
     valid_source_types = set(DATASOURCE_MAP["DB"].values()).union(DATASOURCE_MAP["FILE"].values())
 
     if source_type not in valid_source_types:
@@ -134,23 +105,28 @@ def main():
         local_logs.error(f"Unsupported source type: {source_type}")
         return
 
-    if source_type == DATASOURCE_MAP["FILE"]["JSON"]:
-        data_source = JSONDataSource(db_connector_data["file_path"])
+    if source_type == DATASOURCE_MAP["FILE"]["JSON"]: 
+        data_source = JSONDataSource(connection_params["file_path"]) # s3 file path
         spark = get_spark_session()
 
     elif source_type == DATASOURCE_MAP["FILE"]["CSV"]:
-        data_source = CSVDataSource(db_connector_data["file_path"])
+        data_source = CSVDataSource(connection_params["file_path"]) # s3 file path
         spark = get_spark_session()
 
     elif source_type == DATASOURCE_MAP["FILE"]["XML"]:
         data_source = XMLDataSource(
-            db_connector_data["file_path"], db_connector_data["row_tag"]
+            connection_params["file_path"], connection_params["row_tag"] # s3 file path with row tag meta data
         )
         spark = get_spark_session(packages="com.databricks:spark-xml_2.12:0.14.0")
 
     elif source_type in DATASOURCE_MAP["DB"].values():
 
-        db_creds = db_connector_data["db_creds"]
+        db_creds = get_db_creds(connection_params, source_type)
+
+        if not db_creds:
+            # cw_logger.log(f"No data found for id: {connection_id}")
+            local_logs.error(f"No data found for id: {connection_id}")
+            return
 
         if not db_creds:
             # cw_logger.log(f"No db creds found for id: {connection_id}, source: {source_type}")
@@ -160,21 +136,14 @@ def main():
             return
 
         db_config = DATABASE_CONFIG.get(source_type)
-
-        print(db_config)
-
-
         jdbc_url = db_config["jdbc_url"].format(
             host=db_creds["host"],
             port=db_creds["port"],
             database=db_creds["database"]
         )
-
         driver = db_config["driver"]
         jar_path = db_config["jar_path"]
-        print(
-            f"jdbc_url: {jdbc_url},\n driver: {driver},\n jar_path: {jar_path}"
-        )
+
         spark = get_spark_session(jars=jar_path)
 
         data_source = JDBCDataSource(
@@ -185,24 +154,25 @@ def main():
         )
 
         if data_source.check_connection(spark):
-            print("###################")
             # cw_logger.log(f"No db creds found for conn id: {connection_id}, source: {source_type} database successful.")
             local_logs.info(f"Connection to conn id: {connection_id}, {source_type} database successful.")
             tables_df = data_source.show_tables(spark, db_type=source_type)
-            tables_df.show()
 
-            print("*************************")
             if tables_df:
-                local_logs.info(f"Tables in the database:")
+                table_names = tables_df.select("table_name").rdd.flatMap(lambda x: x).collect()
+                local_logs.info(f"Tables fetched from the database: {table_names}")
             else:
                 local_logs.warning("No tables found in the database.")
         else:
             local_logs.error(f"Failed to connect to the {source_type} database.")
+        
+        model_mapping = fetch_model_mapping()
+        
 
     spark.stop()
 
 if __name__ == "__main__":
-    main()
+    lambda_handler()
 
 
 # def main():

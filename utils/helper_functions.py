@@ -14,9 +14,6 @@ load_dotenv()
 def fetch_connection_params(table_name, connection_id):
     """Fetch database credentials from a DynamoDB table with decrypted password."""
 
-    auth_tag_hex = os.environ.get("AUTH_TAG_HEX")
-    key_hex = os.environ.get("KEY_HEX")
-    iv_hex = os.environ.get("IV_HEX")
     dynamodb = boto3.resource("dynamodb")
 
     table = dynamodb.Table(table_name)
@@ -24,37 +21,34 @@ def fetch_connection_params(table_name, connection_id):
     response = table.get_item(Key={"id": connection_id})
 
     if "Item" in response:
-        item = response["Item"]
+        connection_params = response["Item"]
 
-        db_creds = {
-            "host": item["formData"]["mysql"]["host"],
-            "port": int(item["formData"]["mysql"]["port"]),
-            "database": item["formData"]["mysql"]["database"],
-            "username": item["formData"]["mysql"]["username"],
-        }
-
-        decrypted_password = decrypt_pass(
-            item["formData"]["mysql"]["password"], auth_tag_hex, key_hex, iv_hex
-        )
-
-        db_creds["password"] = decrypted_password
-
-        connection_parms = {
-            "id": item["id"],
-            "connectionName": item["connectionName"],
-            "connectionStatus": item["connectionStatus"],
-            "lastModified": item["lastModified"],
-            "owner": item["owner"],
-            "source": item["source"],
-            "userName": item["userName"],
-            "db_creds": db_creds
-        }
-
-        return connection_parms
+        return connection_params
 
     else:
-        raise Exception(f"No credentials found for Id: {connection_id}")
+        raise Exception(f"No data found for Id: {connection_id}")
 
+def get_db_creds(connection_params, source):
+
+    key_hex = os.getenv("KEY_HEX")
+
+    db_creds = {
+                "host": connection_params["formData"][f"{source}"]["host"],
+                "port": int(connection_params["formData"][f"{source}"]["port"]),
+                "database": connection_params["formData"][f"{source}"]["database"],
+                "username": connection_params["formData"][f"{source}"]["username"],
+            }
+
+    auth_tag_hex = connection_params["formData"][f"{source}"]["authTag"]
+    iv_hex = connection_params["formData"][f"{source}"]["passIV"]
+
+    decrypted_password = decrypt_pass(
+        connection_params["formData"][f"{source}"]["password"], auth_tag_hex, key_hex, iv_hex
+    )
+
+    db_creds["password"] = decrypted_password
+
+    return db_creds
 
 def decrypt_pass(encrypted_data_hex, auth_tag_hex, key_hex, iv_hex):
     try:
@@ -77,3 +71,18 @@ def decrypt_pass(encrypted_data_hex, auth_tag_hex, key_hex, iv_hex):
         return json.loads(decrypted.decode("utf-8"))
     except Exception as error:
         raise error
+
+def fetch_model_mapping(table_name, connection_id):
+
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(table_name)
+
+    response = table.get_item(Key={"id": connection_id})
+
+    if "Item" in response:
+        model_mappings = response["Item"]
+
+        return model_mappings
+
+    else:
+        raise Exception(f"No data found for Id: {connection_id}")
