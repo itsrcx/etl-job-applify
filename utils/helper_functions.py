@@ -1,6 +1,7 @@
-import boto3
 import json
 import os
+import boto3
+from boto3.dynamodb.conditions import Attr
 from binascii import unhexlify
 from dotenv import load_dotenv
 
@@ -77,7 +78,9 @@ def fetch_model_mapping(table_name, connection_id):
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(table_name)
 
-    response = table.get_item(Key={"id": connection_id})
+    response = table.scan(
+        FilterExpression=Attr('your_attribute_name').eq('YourValue')
+        )
 
     if "Item" in response:
         model_mappings = response["Item"]

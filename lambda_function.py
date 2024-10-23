@@ -166,7 +166,12 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
         else:
             local_logs.error(f"Failed to connect to the {source_type} database.")
         
-        model_mapping = fetch_model_mapping()
+        # model_mapping = fetch_model_mapping(
+        #     table_name=MODEL_MAPPING_DYNAMO_TABLE, 
+        #     connection_id="avtar_1726485754460-1728890772659"
+        # )
+
+        # print(model_mapping)
         
 
     spark.stop()
