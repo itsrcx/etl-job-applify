@@ -50,3 +50,6 @@
 2024-10-23 17:39:41,377 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
 2024-10-23 17:39:56,411 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
 2024-10-23 17:40:01,164 - INFO - Redshift connection successful
+2024-10-24 15:59:33,469 - INFO - Connection to conn id: bharwer_1727339262065-1729659952682, mysql database successful.
+2024-10-24 15:59:41,433 - INFO - Tables fetched from the database: ['Supplier', 'Category', 'OrderDetail', 'EmployeeTerritory', 'Employee', 'Product', 'Customer', 'Region', 'CustCustDemographics', 'SalesOrder', 'CustomerDemographics', 'Shipper', 'Territory']
+2024-10-24 15:59:51,721 - ERROR - Redshift connection unsuccessful

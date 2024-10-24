@@ -161,10 +161,10 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
 
         data_store = RedshiftDataStore(
             spark=spark,
-            jdbc_url=DATASTORE_MAP["REDSHIFT"]["jdbc_url"],
-            user_name=os.getenv('DB_NAME')
-            password=os.getenv('DB_PASSWORD')
-            driver= DATASTORE_MAP["REDSHIFT"]["driver"]
+            jdbc_url=DATABASE_CONFIG[DATASTORE_MAP["REDSHIFT"]]["jdbc_url"],
+            user_name=os.getenv('DB_NAME'),
+            password=os.getenv('DB_PASSWORD'),
+            driver= DATABASE_CONFIG[DATASTORE_MAP["REDSHIFT"]]["driver"]
         )
 
         if data_source.check_connection(spark):
@@ -207,7 +207,7 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
                     df = data_source.fetch_data(spark, table)
                     if df:
                         try:
-                            data_store.upsert_data(df,table):
+                            data_store.upsert_data(df,table)
                             local_logs.info(f"Data Inserted in Redshift table: {table}")
                         except Exception as e:
                             local_logs.error(f"Data not Inserted: {table},\nerror:{e} ")
