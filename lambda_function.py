@@ -51,7 +51,7 @@ DATABASE_CONFIG = {
         "jar_path": "./jdbc-drivers/mssql-jdbc-12.8.1.jre8.jar,./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     },
     DATASTORE_MAP["REDSHIFT"]: {
-        "db_url": "jdbc:redshift://{REDSHIFT_CLUSTER}:{db_port}/{db_name}",
+        "jdbc_url": f"jdbc:redshift://{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', 5439)}/{os.getenv('DB_NAME')}",
         "driver": "com.amazon.redshift.jdbc42.Driver",
         "jar_path": "./jdbc-drivers/redshift-jdbc42-2.1.0.30.jar"
     }
@@ -160,11 +160,11 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
         )
 
         data_store = RedshiftDataStore(
-            spark,
-            f"jdbc:redshift://test1.328957034549.us-east-1.redshift-serverless.amazonaws.com:5439/dev",
-            "admin",
-            "Applify3038",
-            "com.amazon.redshift.jdbc42.Driver"
+            spark=spark,
+            jdbc_url=DATASTORE_MAP["REDSHIFT"]["jdbc_url"],
+            user_name=os.getenv('DB_NAME')
+            password=os.getenv('DB_PASSWORD')
+            driver= DATASTORE_MAP["REDSHIFT"]["driver"]
         )
 
         if data_source.check_connection(spark):
@@ -200,17 +200,17 @@ def lambda_handler(connection_id="bharwer_1727339262065-1729659952682"):
         # local_logs.warning(f"Model mapping fetched for Connector Id: {connection_id}")
         
         if table_names:
-            print(table_names)
             while True:
                 table = input(f"Choose table name to insert from Connector Id: {connection_id}: ")
 
                 if table in table_names:
                     df = data_source.fetch_data(spark, table)
                     if df:
-                        if data_store.upsert_data(df,table):
+                        try:
+                            data_store.upsert_data(df,table):
                             local_logs.info(f"Data Inserted in Redshift table: {table}")
-                        else:
-                            local_logs.error(f"Data not Inserted: {table} ")
+                        except Exception as e:
+                            local_logs.error(f"Data not Inserted: {table},\nerror:{e} ")
                             return
                     break 
 

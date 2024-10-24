@@ -1,4 +1,5 @@
 from pyspark.sql import DataFrame
+from pyspark.errors import AnalysisException
 
 DATASTORE_MAP = {
     "REDSHIFT": "redshift"
@@ -45,12 +46,12 @@ class PostgresDataStore(DataStore):
         print(f"Executing upsert for PostgreSQL:\n{upsert_sql}")
 
 class RedshiftDataStore(DataStore):
-    def __init__(self, spark, db_url, db_user, db_password, db_driver):
+    def __init__(self, spark, jdbc_url, user_name, password, driver):
         self.spark = spark
-        self.db_url = db_url
-        self.db_user = db_user
-        self.db_password = db_password
-        self.db_driver = db_driver
+        self.jdbc_url = jdbc_url
+        self.user_name = user_name
+        self.password = password
+        self.driver = driver
 
     def check_connection(self):
         """Checks the connection to the database by executing a simple query."""
@@ -58,11 +59,11 @@ class RedshiftDataStore(DataStore):
             # Attempting to run a simple query to check the connection
             self.spark.read \
                 .format("jdbc") \
-                .option("url", self.db_url) \
+                .option("url", self.jdbc_url) \
                 .option("query", "SELECT 1 AS test_column") \
-                .option("user", self.db_user) \
-                .option("password", self.db_password) \
-                .option("driver", self.db_driver) \
+                .option("user", self.user_name) \
+                .option("password", self.password) \
+                .option("driver", self.driver) \
                 .load()
             return True
         except AnalysisException as e:
@@ -76,11 +77,11 @@ class RedshiftDataStore(DataStore):
     def upsert_data(self, df: DataFrame, table_name: str):
         df.write \
             .format("jdbc") \
-            .option("url", self.db_url) \
+            .option("url", self.jdbc_url) \
             .option("dbtable", table_name) \
-            .option("user", self.db_user) \
-            .option("password", self.db_password) \
-            .option("driver", self.db_driver) \
+            .option("user", self.user_name) \
+            .option("password", self.password) \
+            .option("driver", self.driver) \
             .mode("append") \
             .save()
 
